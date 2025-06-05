@@ -22,3 +22,11 @@ jobs:
 
       - name: AWS ECR Login
         uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: service_a
+          file: service_a/Dockerfile
+          push: true
+          tags: ${{ github.sha }}
