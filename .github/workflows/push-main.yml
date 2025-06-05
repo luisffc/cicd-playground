@@ -16,7 +16,8 @@ jobs:
       ecr-repository: service_a
       aws-region: ${{ vars.AWS_REGION }}
       # image-tag: ${{ github.ref_name }}-${{ github.run_number }}
-      image: ${{ inputs.image || '' }}
+      # image: ${{ inputs.image || '' }}
+      image: "593793047834.dkr.ecr.us-east-1.amazonaws.com/service_a:344eea183fa0e676985dfaf04ec542044dc57435"
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
