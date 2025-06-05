@@ -74,4 +74,11 @@ jobs:
         with:
           task-definition: ecs/task-definition.json
           container-name: app                # container name inside the task def
-          image: ${{ needs.build.outputs.image }}
+          image: ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}:${{ inputs.image-tag }}
+
+      # - uses: aws-actions/amazon-ecs-deploy-task-definition@v2       # latest v2.x
+      #   with:
+      #     task-definition: ${{ steps.render.outputs.task-definition }}
+      #     service: my-ecs-service
+      #     cluster: getting-started-cluster
+      #     wait-for-service-stability: true
