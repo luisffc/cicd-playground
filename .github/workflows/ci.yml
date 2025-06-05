@@ -24,7 +24,7 @@ jobs:
       - name: Run service
         run: |
           cd service_a
-          uvicorn main:app --host 0.0.0.0 --port 8080
+          & uvicorn main:app --host 0.0.0.0 --port 8080
       - name: Run tests
         run: |
           curl -X GET http://0.0.0.0:8080/ping
