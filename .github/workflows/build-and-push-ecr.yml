@@ -44,8 +44,6 @@ jobs:
           platforms: linux/amd64
           tags: |
             ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}:${{ inputs.image-tag }}
-          cache-from: type=registry,ref=${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}:cache
-          cache-to:   type=registry,ref=${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}:cache,mode=max
 
       # 4. Surface the final image URL for downstream jobs
       - name: Export image reference
