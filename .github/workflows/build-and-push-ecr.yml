@@ -15,7 +15,7 @@ on:
         required: false
         default: ${{ github.sha }}
       desired-count:  # defaults to 1
-        type: integer
+        type: number
         required: false
         default: 1
       # ecs-cluster:
