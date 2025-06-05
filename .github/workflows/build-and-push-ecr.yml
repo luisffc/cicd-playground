@@ -69,6 +69,7 @@ jobs:
     env:
       CLUSTER_NAME: "getting-started-cluster"
       SERVICE_NAME: "${{ inputs.ecr-repository }}"
+      LAUNCH_TYPE: FARGATE
       SUBNETS: '"subnet-08548cbd3d971f42b","subnet-075f8d82da143e5fc"'
       SECURITY_GROUPS: '"sg-065955a201b76c577"'
       PUBLIC_IP: ENABLED
