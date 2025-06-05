@@ -17,14 +17,13 @@ jobs:
         with:
           python-version: '3.13'
           cache: 'pip'
-      - name: Cd to service_a
-        run: cd service_a
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          cd service_a
           pip install -r requirements.txt
       - name: Run service
         run: |
+          cd service_a
           uvicorn main:app --host 0.0.0.0 --port 8080 --daemon true
       - name: Run tests
         run: |
