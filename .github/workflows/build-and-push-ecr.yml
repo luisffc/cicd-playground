@@ -1,0 +1,53 @@
+name: Build & Push Docker image to ECR
+
+on:
+  # Makes this workflow callable from other workflows
+  workflow_call:
+    inputs:
+      ecr-repository:   # e.g. “my-service”
+        type: string
+        required: true
+      aws-region:       # e.g. “us-east-1”
+        type: string
+        required: true
+      image-tag:        # defaults to the commit SHA
+        type: string
+        required: false
+        default: ${{ github.sha }}
+    secrets:
+      AWS_ACCESS_KEY_ID:
+      AWS_SECRET_ACCESS_KEY:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ inputs.ecr-repository }}
+          file: ${{ inputs.ecr-repository }}/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}:${{ inputs.image-tag }}
+          cache-from: type=registry,ref=${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}:cache
+          cache-to:   type=registry,ref=${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}:cache,mode=max
+
+      # 4. Surface the final image URL for downstream jobs
+      - name: Export image reference
+        run: |
+          echo "image=${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}:${{ inputs.image-tag }}" >> $GITHUB_OUTPUT
