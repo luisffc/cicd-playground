@@ -12,19 +12,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
+
+      - name: Setup AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          python-version: '3.13'
-          cache: 'pip'
-      - name: Install dependencies
-        run: |
-          cd service_a
-          pip install -r requirements.txt
-      - name: Run service
-        run: |
-          cd service_a
-          & uvicorn main:app --host 0.0.0.0 --port 8080
-      - name: Run tests
-        run: |
-          curl -X GET http://0.0.0.0:8080/ping
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: AWS ECR Login
+        uses: aws-actions/amazon-ecr-login@v2
