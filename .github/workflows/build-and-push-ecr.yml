@@ -14,6 +14,9 @@ on:
         type: string
         required: false
         default: ${{ github.sha }}
+      image:            # If present, then skip the build step
+        type: string
+        required: false
       desired-count:  # defaults to 1
         type: number
         required: false
@@ -32,6 +35,7 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    if: ${{ inputs.image == '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -92,7 +96,7 @@ jobs:
         with:
           task-definition: task-definition.json
           container-name: app                # container name inside the task def
-          image: ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}:${{ inputs.image-tag }}
+          image: ${{ inputs.image || steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}:${{ inputs.image-tag }}
 
       - name: Register TD + create or update service
         id: ecs
