@@ -1,0 +1,34 @@
+version: 2.1
+
+import:
+  - ./build-and-push-orb.yml       # brings the file-based orb into this config
+
+orbs:
+  reusable: file:./build-and-push-orb.yml
+
+parameters:
+  ecr-repository: { type: string, default: service_a }
+  aws-region:     { type: string, default: us-east-1 }
+  image-tag:      { type: string, default: "<< pipeline.git.branch >>-<< pipeline.number >>" }
+
+jobs:
+  build_and_push:
+    docker:
+      - image: cimg/base:stable     # any image with Docker CLI
+    environment:                    # optional—but useful to surface defaults
+      AWS_DEFAULT_REGION: << parameters.aws-region >>
+    steps:
+      - reusable/build-and-push:
+          ecr-repo:   << parameters.ecr-repository >>
+          aws-region: << parameters.aws-region >>
+          image-tag:  << parameters.image-tag >>
+
+workflows:
+  build-on-main:
+    jobs:
+      - build_and_push:
+          # If you prefer using a context that holds the same three secrets,
+          # add `context: aws-creds` here instead of setting project-level vars.
+          filters:
+            branches:
+              only: main

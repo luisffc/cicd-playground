@@ -1,0 +1,25 @@
+version: 2.1
+
+description: >
+  Internal orb that builds a Docker image and pushes it to Amazon ECR
+  using regular AWS credentials injected as env-vars.
+
+orbs:
+  aws-ecr: circleci/aws-ecr@9.1.0   # helper that handles login/build/push
+
+commands:
+  build-and-push:
+    description: Build & push Docker image to ECR
+    parameters:
+      ecr-repo:     { type: string,  description: "ECR repo name (no registry prefix)" }
+      aws-region:   { type: string,  default: "us-east-1" }
+      image-tag:    { type: string,  default: "<< pipeline.git.revision >>" }
+    steps:
+      - checkout
+
+      # The command below expects AWS_* env-vars to already be present
+      - aws-ecr/build-and-push-image:
+          repo: << parameters.ecr-repo >>
+          tag:  << parameters.image-tag >>
+          region: << parameters.aws-region >>
+          remote-docker-layer-cache: true
