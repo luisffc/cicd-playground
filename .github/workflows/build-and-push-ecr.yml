@@ -14,6 +14,13 @@ on:
         type: string
         required: false
         default: ${{ github.sha }}
+      # ecs-cluster:
+      #   type: string
+      #   required: true
+      # ecs-service:
+      #   type: string
+      #   required: true
+
     secrets:
       AWS_ACCESS_KEY_ID:
       AWS_SECRET_ACCESS_KEY:
@@ -55,6 +62,12 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
 
+    env:
+      CLUSTER_NAME: "getting-started-cluster"
+      SERVICE_NAME: "${{ inputs.ecr-repository }}"
+      SUBNETS: '"subnet-08548cbd3d971f42b","subnet-075f8d82da143e5fc"'
+      SECURITY_GROUPS: '"sg-065955a201b76c577"'
+      PUBLIC_IP: ENABLED
     steps:
       - uses: actions/checkout@v4
 
@@ -75,6 +88,49 @@ jobs:
           task-definition: task-definition.json
           container-name: app                # container name inside the task def
           image: ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ecr-repository }}:${{ inputs.image-tag }}
+
+      - name: Register TD + create or update service
+        id: ecs
+        run: |
+          set -euo pipefail
+          TD_FILE="${{ steps.render.outputs.task-definition }}"
+          echo "📦 Registering task definition ..."
+          TD_ARN=$(aws ecs register-task-definition \
+                    --cli-input-json file://"$TD_FILE" \
+                    --query 'taskDefinition.taskDefinitionArn' \
+                    --output text)
+
+          echo "🔍 Checking if service $SERVICE_NAME exists ..."
+          if aws ecs describe-services \
+                --cluster "$CLUSTER_NAME" \
+                --services "$SERVICE_NAME" \
+                --query 'failures' \
+                --output json | jq -e '.|length==0' >/dev/null; then
+            echo "✅ Service exists – just updating"
+            aws ecs update-service \
+                --cluster "$CLUSTER_NAME" \
+                --service "$SERVICE_NAME" \
+                --task-definition "$TD_ARN" \
+                --desired-count "$DESIRED_COUNT" \
+                --force-new-deployment
+          else
+            echo "➕ Service not found – creating it"
+            aws ecs create-service \
+                --cluster "$CLUSTER_NAME" \
+                --service-name "$SERVICE_NAME" \
+                --task-definition "$TD_ARN" \
+                --desired-count "$DESIRED_COUNT" \
+                --launch-type "$LAUNCH_TYPE" \
+                --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECURITY_GROUPS}],assignPublicIp=${PUBLIC_IP}}" \
+                --scheduling-strategy REPLICA
+          fi
+
+      # 3️⃣ Wait until the service is healthy
+      - name: Wait for steady state
+        run: |
+          aws ecs wait services-stable \
+            --cluster "$CLUSTER_NAME" \
+            --services "$SERVICE_NAME"
 
       # - uses: aws-actions/amazon-ecs-deploy-task-definition@v2       # latest v2.x
       #   with:
